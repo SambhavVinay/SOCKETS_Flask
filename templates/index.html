@@ -2,157 +2,95 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>InstaChat</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <title>Goongram • Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       background: #fafafa;
+      margin: 0;
       display: flex;
-      justify-content: center;
-      align-items: center;
+      flex-direction: column;
       height: 100vh;
     }
 
-    .chat-container {
-      width: 100%;
-      max-width: 400px;
-      height: 600px;
-      border: 1px solid #ddd;
-      display: flex;
-      flex-direction: column;
-      background: white;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .chat-header {
-      padding: 15px;
-      font-weight: bold;
-      border-bottom: 1px solid #ddd;
-      background-color: #fff;
-      text-align: center;
-    }
-
-    .chat-box {
+    #chat {
       flex: 1;
-      padding: 15px;
+      padding: 20px;
       overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      border-bottom: 1px solid #ccc;
     }
 
     .message {
-      max-width: 70%;
-      padding: 10px 14px;
-      border-radius: 20px;
-      font-size: 14px;
-      line-height: 1.4;
-      word-wrap: break-word;
+      margin-bottom: 10px;
     }
 
-    .sent {
-      align-self: flex-end;
-      background-color: #3797f0;
-      color: white;
-      border-bottom-right-radius: 0;
-    }
-
-    .received {
-      align-self: flex-start;
-      background-color: #efefef;
-      color: black;
-      border-bottom-left-radius: 0;
-    }
-
-    .chat-input {
+    #form {
       display: flex;
-      border-top: 1px solid #ddd;
       padding: 10px;
+      background: #fff;
     }
 
-    .chat-input input {
+    #input {
       flex: 1;
       padding: 10px;
-      border: none;
-      border-radius: 20px;
-      background: #f0f0f0;
-      font-size: 14px;
-      outline: none;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 5px;
     }
 
-    .chat-input button {
-      background: none;
-      border: none;
-      color: #3797f0;
-      font-weight: bold;
+    #send {
+      padding: 10px 20px;
       margin-left: 10px;
+      background: #3897f0;
+      color: white;
+      border: none;
+      border-radius: 5px;
       cursor: pointer;
-      font-size: 14px;
     }
 
-    .chat-box::-webkit-scrollbar {
-      width: 5px;
-    }
-
-    .chat-box::-webkit-scrollbar-thumb {
-      background-color: #ccc;
-      border-radius: 10px;
+    #send:hover {
+      background: #2f80ed;
     }
   </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-header">InstaChat</div>
-    <div class="chat-box" id="chat-box"></div>
-    <div class="chat-input">
-      <input type="text" id="message-input" placeholder="Message..." />
-      <button id="send-btn">Send</button>
-    </div>
-  </div>
+
+  <div id="chat"></div>
+
+  <form id="form" onsubmit="return sendMessage();">
+    <input id="input" autocomplete="off" placeholder="Type your message..." />
+    <button id="send">Send</button>
+  </form>
 
   <script>
-  const username = prompt("Enter your name");
-  const ws = new WebSocket("ws://" + location.host + "/dash");
-  const chatBox = document.getElementById("chat-box");
-  const input = document.getElementById("message-input");
-  const sendBtn = document.getElementById("send-btn");
+    const username = prompt("Enter your username") || "anon";
+    const ws = new WebSocket("ws://" + location.host + "/dash?username=" + encodeURIComponent(username));
 
-  ws.onmessage = (event) => {
-    const [sender, msg] = event.data.split(": ", 2);
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("input");
 
-    if (sender === username) {
-      addMessage("You: " + msg, "sent");
-    } else {
-      addMessage(sender + ": " + msg, "received");
+    ws.onmessage = function (event) {
+      const msg = document.createElement("div");
+      msg.className = "message";
+      msg.textContent = event.data;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    };
+
+    function sendMessage() {
+      const text = input.value.trim();
+      if (text) {
+        ws.send(text);
+        const ownMsg = document.createElement("div");
+        ownMsg.className = "message";
+        ownMsg.textContent = `${username}: ${text}`;
+        chat.appendChild(ownMsg);
+        chat.scrollTop = chat.scrollHeight;
+        input.value = "";
+      }
+      return false;
     }
-  };
-
-  sendBtn.onclick = sendMessage;
-
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") sendMessage();
-  });
-
-  function sendMessage() {
-  const msg = input.value.trim();
-  if (!msg) return;
-  const fullMsg = username + ": " + msg;
-  addMessage("You: " + msg, "sent");  // Show your message immediately
-  ws.send(fullMsg);                   // Then send to server
-  input.value = "";
-}
-
-
-  function addMessage(text, type) {
-    const msg = document.createElement("div");
-    msg.classList.add("message", type);
-    msg.textContent = text;
-    chatBox.appendChild(msg);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-</script>
-
+  </script>
 </body>
 </html>
