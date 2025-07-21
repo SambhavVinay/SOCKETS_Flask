@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InstaChat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background: #fafafa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .chat-container {
+      width: 100%;
+      max-width: 400px;
+      height: 600px;
+      border: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-header {
+      padding: 15px;
+      font-weight: bold;
+      border-bottom: 1px solid #ddd;
+      background-color: #fff;
+      text-align: center;
+    }
+
+    .chat-box {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .sent {
+      align-self: flex-end;
+      background-color: #3797f0;
+      color: white;
+      border-bottom-right-radius: 0;
+    }
+
+    .received {
+      align-self: flex-start;
+      background-color: #efefef;
+      color: black;
+      border-bottom-left-radius: 0;
+    }
+
+    .chat-input {
+      display: flex;
+      border-top: 1px solid #ddd;
+      padding: 10px;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 20px;
+      background: #f0f0f0;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .chat-input button {
+      background: none;
+      border: none;
+      color: #3797f0;
+      font-weight: bold;
+      margin-left: 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .chat-box::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .chat-box::-webkit-scrollbar-thumb {
+      background-color: #ccc;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">InstaChat</div>
+    <div class="chat-box" id="chat-box"></div>
+    <div class="chat-input">
+      <input type="text" id="message-input" placeholder="Message..." />
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <script>
+  const username = prompt("Enter your name");
+  const ws = new WebSocket("ws://" + location.host + "/dash");
+  const chatBox = document.getElementById("chat-box");
+  const input = document.getElementById("message-input");
+  const sendBtn = document.getElementById("send-btn");
+
+  ws.onmessage = (event) => {
+    const [sender, msg] = event.data.split(": ", 2);
+
+    if (sender === username) {
+      addMessage("You: " + msg, "sent");
+    } else {
+      addMessage(sender + ": " + msg, "received");
+    }
+  };
+
+  sendBtn.onclick = sendMessage;
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
+
+  function sendMessage() {
+  const msg = input.value.trim();
+  if (!msg) return;
+  const fullMsg = username + ": " + msg;
+  addMessage("You: " + msg, "sent");  // Show your message immediately
+  ws.send(fullMsg);                   // Then send to server
+  input.value = "";
+}
+
+
+  function addMessage(text, type) {
+    const msg = document.createElement("div");
+    msg.classList.add("message", type);
+    msg.textContent = text;
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+</script>
+
+</body>
+</html>
